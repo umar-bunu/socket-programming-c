@@ -1,4 +1,4 @@
-
+#include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
@@ -18,8 +18,33 @@ void PANIC(char* msg);
 #define PANIC(msg)  { perror(msg); exit(-1); }
 
 //my own
-int validateuser(char words[]);
+int validateuser(char username[], char password[]);
 
+void getCommand(char cmd[], int client){
+     // my own
+    char *cmd1 = strtok(cmd, " ");
+   
+    if(strcmp(cmd1, "USER") == 0){
+       char *cmd2 = strtok(NULL, " ");
+            if(strcmp(cmd2, "umar") == 0){
+                
+                char *cmd3 = strtok(NULL, ".");
+                if(strcmp(cmd3,"password") == 0){
+                   
+                    send(client, "200 User umar granted to access", 32, 0);
+                }
+            }
+             
+            
+        else {
+             send(client, cmd1, 13, 0);
+                exit(1);
+        }
+    }
+    else {
+        send(client, "error42", 11, 0);
+    }
+}
 /*--------------------------------------------------------------------*/
 /*--- Child - echo server                                         ---*/
 /*--------------------------------------------------------------------*/
@@ -29,21 +54,17 @@ void* Child(void* arg)
     int bytes_read;
     int client = *(int *)arg;
 
-    // my own
-    char username[10] = "umar";
-    char password[10] = "password";
+   
     
     
 
     do
     {
+
         bytes_read = recv(client, line, sizeof(line), 0);
         if (bytes_read > 0) {
             char temp;
-            if(!validateuser(line)){
-                send(client, "404 user not found", 19, 0);
-                exit(1);
-            }
+            getCommand(line, client);
                 if ( (bytes_read=send(client, line, bytes_read, 0)) < 0 ) {
                         printf("Send failed\n");
                         break;
@@ -118,6 +139,8 @@ int main(int argc, char *argv[])
 }
 
 
-int validateuser( char details[]){
+int validateuser( char username[], char password[]){
+    if(strcmp(password,"password")==0)
+        return 1;
     return 0;
 }
