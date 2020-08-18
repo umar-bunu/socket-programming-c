@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
+
 /* Definations */
 #define DEFAULT_BUFLEN 1024
 #define PORT 1888
@@ -16,24 +17,33 @@
 void PANIC(char* msg);
 #define PANIC(msg)  { perror(msg); exit(-1); }
 
+//my own
+int validateuser(char words[]);
+
 /*--------------------------------------------------------------------*/
 /*--- Child - echo server                                         ---*/
 /*--------------------------------------------------------------------*/
+
 void* Child(void* arg)
 {   char line[DEFAULT_BUFLEN];
     int bytes_read;
     int client = *(int *)arg;
+
+    // my own
+    char username[10] = "umar";
+    char password[10] = "password";
+    
+    
 
     do
     {
         bytes_read = recv(client, line, sizeof(line), 0);
         if (bytes_read > 0) {
             char temp;
-        for(int i=0, j=bytes_read-2; i<j; i++, j--){
-             temp = line[i];
-             line[i] = line[j];
-             line[j] = temp;
-       }
+            if(!validateuser(line)){
+                send(client, "404 user not found", 19, 0);
+                exit(1);
+            }
                 if ( (bytes_read=send(client, line, bytes_read, 0)) < 0 ) {
                         printf("Send failed\n");
                         break;
@@ -59,6 +69,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in addr;
     unsigned short port=0;
 
+    
     while ((opt = getopt(argc, argv, "p:")) != -1) {
         switch (opt) {
         case 'p':
@@ -103,5 +114,10 @@ int main(int argc, char *argv[])
         else
             pthread_detach(child);  /* disassociate from parent */
     }
+    return 0;
+}
+
+
+int validateuser( char details[]){
     return 0;
 }
