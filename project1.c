@@ -9,16 +9,33 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
+#include <sys/types.h>
+#include <dirent.h>
+
 
 /* Definations */
 #define DEFAULT_BUFLEN 1024
 #define PORT 1888
+# define dirname "/tmp/server"
 
 void PANIC(char* msg);
 #define PANIC(msg)  { perror(msg); exit(-1); }
 
 //my own
 int validateuser(char username[], char password[]);
+
+void listFiles(int client){
+    DIR *dr;
+    struct dirent *files;
+    dr = opendir("./tmp/server");
+    char *tempdata;
+    while((files = readdir(dr)) != NULL ){
+      tempdata = files->d_name;
+       send(client,tempdata, 11, 0);
+       send(client, "\n", 2, 0);
+    }
+    closedir(dr);
+}
 
 void getCommand(char cmd[], int client){
      // my own
@@ -29,20 +46,18 @@ void getCommand(char cmd[], int client){
             if(strcmp(cmd2, "umar") == 0){
                 
                 char *cmd3 = strtok(NULL, ".");
-                if(strcmp(cmd3,"password") == 0){
-                   
+                if(strcmp(cmd3,"password") == 0){      
                     send(client, "200 User umar granted to access", 32, 0);
                 }
             }
-             
-            
         else {
              send(client, cmd1, 13, 0);
                 exit(1);
         }
     }
-    else {
-        send(client, "error42", 11, 0);
+    else if (strcmp(cmd1,"LIST") == 0){
+        listFiles(client);
+        
     }
 }
 /*--------------------------------------------------------------------*/
@@ -86,7 +101,13 @@ void* Child(void* arg)
 /*--- up after terminated children.                                ---*/
 /*--------------------------------------------------------------------*/
 int main(int argc, char *argv[])
-{   int sd,opt,optval;
+{  
+    //my own
+    system("mkdir ./tmp");
+    system("mkdir ./tmp/server");
+
+
+     int sd,opt,optval;
     struct sockaddr_in addr;
     unsigned short port=0;
 
