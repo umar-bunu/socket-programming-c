@@ -25,27 +25,34 @@ void PANIC(char* msg);
 //my own
 int validateuser(char username[], char password[]);
 
-void openFileAndRead(int client, char * cmd2){
+void openFileAndRead(int client, char cmd2[]){
      
+    char dir[255] = "tmp/server/";
+        strcat(dir,cmd2);
+    
+    FILE *selectedfile;
+    selectedfile = fopen(cmd2, "r");
+    char ch[255];
 
-    FILE *file = fopen("practice.txt", "r");
-    char filedir[44];
-    char *ch;
-    strcpy(filedir, dirname);
-    strcat(filedir,cmd2);
    
-    send(client, filedir, 24, 0);
+    
    
    
-    if( file == NULL)
-        send(client, "file not found\n", 16, 0);
+    if( selectedfile == NULL)
+        send(client, "\n404 file not found\n", 20, 0);
 
     else{
 
-     while((fgets(ch, sizeof(ch), file)) != NULL)
-      send(client,"file found\n",11,0);
-
-   fclose(file);
+     while((fgets(ch, sizeof(ch), selectedfile)) != NULL){
+     int counter = 0;
+      for(int i =0;ch[i]!='\0';i++){
+          counter++;
+      }
+        counter++;
+    send(client, ch, counter, 0);
+    }
+    send(client, "\n.\n", 3, 0);
+   fclose(selectedfile);
    }
 
 }
@@ -66,15 +73,15 @@ void listFiles(int client){
 
 void getCommand(char cmd[], int client){
      // my own
-     char *cmd1 = strtok(cmd, ". \0\n");
+     char *cmd1 = strtok(cmd, ". \n");
     if(strcmp(cmd1, "USER") == 0){
        char *cmd2 = strtok(NULL, " ");
             if(strcmp(cmd2, "umar") == 0){
                 
-                char *cmd3 = strtok(NULL, ". \n");
-                send(client, cmd3, strlen(cmd3), 0);
+                char *cmd3 = strtok(NULL, " .\n");
+               
                 if(strcmp(cmd3,"password") == 0){      
-                    send(client, "200 User umar granted to access", 32, 0);
+                    send(client, "200 User umar granted to access\n", 32, 0);
                 }
             }
         else {
@@ -89,8 +96,12 @@ void getCommand(char cmd[], int client){
         
     }
     else if (strcmp(cmd1,"GET") == 0){
-       char *cmd2 = strtok(NULL, " \0");
-        openFileAndRead(client, cmd2);
+       char *cmd2 = strtok(NULL, " \n");
+        char dir[100];
+        strcpy(dir,"tmp/server/");
+        strcat(dir, cmd2);
+
+        openFileAndRead(client, dir);
     }
 }
 /*--------------------------------------------------------------------*/
@@ -113,10 +124,7 @@ void* Child(void* arg)
         if (bytes_read > 0) {
             char temp;
             getCommand(line, client);
-                if ( (bytes_read=send(client, line, bytes_read, 0)) < 0 ) {
-                        printf("Send failed\n");
-                        break;
-                }
+                
         } else if (bytes_read == 0 ) {
                 printf("Connection closed by client\n");
                 break;
