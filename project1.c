@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
+#include <sys/stat.h> 
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -16,7 +17,7 @@
 /* Definations */
 #define DEFAULT_BUFLEN 1024
 #define PORT 1888
-# define dirname "/tmp/server"
+# define dirname "tmp/server/"
 
 void PANIC(char* msg);
 #define PANIC(msg)  { perror(msg); exit(-1); }
@@ -24,7 +25,33 @@ void PANIC(char* msg);
 //my own
 int validateuser(char username[], char password[]);
 
+void openFileAndRead(int client, char * cmd2){
+     
+
+    FILE *file = fopen("practice.txt", "r");
+    char filedir[44];
+    char *ch;
+    strcpy(filedir, dirname);
+    strcat(filedir,cmd2);
+   
+    send(client, filedir, 24, 0);
+   
+   
+    if( file == NULL)
+        send(client, "file not found\n", 16, 0);
+
+    else{
+
+     while((fgets(ch, sizeof(ch), file)) != NULL)
+      send(client,"file found\n",11,0);
+
+   fclose(file);
+   }
+
+}
+
 void listFiles(int client){
+  
     DIR *dr;
     struct dirent *files;
     dr = opendir("./tmp/server");
@@ -39,25 +66,31 @@ void listFiles(int client){
 
 void getCommand(char cmd[], int client){
      // my own
-    char *cmd1 = strtok(cmd, " ");
-   
+     char *cmd1 = strtok(cmd, ". \0\n");
     if(strcmp(cmd1, "USER") == 0){
        char *cmd2 = strtok(NULL, " ");
             if(strcmp(cmd2, "umar") == 0){
                 
-                char *cmd3 = strtok(NULL, ".");
+                char *cmd3 = strtok(NULL, ". \n");
+                send(client, cmd3, strlen(cmd3), 0);
                 if(strcmp(cmd3,"password") == 0){      
                     send(client, "200 User umar granted to access", 32, 0);
                 }
             }
         else {
-             send(client, cmd1, 13, 0);
+             send(client, "404 user not found", 13, 0);
                 exit(1);
         }
     }
-    else if (strcmp(cmd1,"LIST") == 0){
+   
+     if (strcmp(cmd,"LIST") == 0){
+       
         listFiles(client);
         
+    }
+    else if (strcmp(cmd1,"GET") == 0){
+       char *cmd2 = strtok(NULL, " \0");
+        openFileAndRead(client, cmd2);
     }
 }
 /*--------------------------------------------------------------------*/
@@ -103,8 +136,12 @@ void* Child(void* arg)
 int main(int argc, char *argv[])
 {  
     //my own
-    system("mkdir ./tmp");
-    system("mkdir ./tmp/server");
+    int checkDir;
+    char* dir1 = "tmp";
+    char* dir2 = "tmp/server";
+    mkdir(dir1, 0777);
+    mkdir(dir2, 0777);
+    
 
 
      int sd,opt,optval;
