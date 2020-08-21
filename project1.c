@@ -18,7 +18,7 @@
 #define DEFAULT_BUFLEN 1024
 #define PORT 1888
 # define dirname "tmp/server/"
-
+int isLoggedin = 0;
 void PANIC(char* msg);
 #define PANIC(msg)  { perror(msg); exit(-1); }
 
@@ -64,10 +64,16 @@ void listFiles(int client){
     dr = opendir("./tmp/server");
     char *tempdata;
     while((files = readdir(dr)) != NULL ){
+      int counter = 0;
       tempdata = files->d_name;
-       send(client,tempdata, 11, 0);
+      for(int i=0;tempdata[i]!='\0';i++){
+          counter++;
+      }
+      counter++;
+       send(client,tempdata, counter, 0);
        send(client, "\n", 2, 0);
     }
+    send(client, ".\n", 2, 0);
     closedir(dr);
 }
 
@@ -81,6 +87,7 @@ void getCommand(char cmd[], int client){
                 char *cmd3 = strtok(NULL, " .\n");
                
                 if(strcmp(cmd3,"password") == 0){      
+                    isLoggedin = 1;
                     send(client, "200 User umar granted to access\n", 32, 0);
                 }
             }
@@ -89,19 +96,27 @@ void getCommand(char cmd[], int client){
                 exit(1);
         }
     }
-   
-     if (strcmp(cmd,"LIST") == 0){
+    else if(!isLoggedin){
+           send(client, "user not logged in\n",19, 0);
+           return;
+       }
+    else if (strcmp(cmd,"LIST") == 0){
        
         listFiles(client);
         
     }
-    else if (strcmp(cmd1,"GET") == 0){
+    else if(strcmp(cmd1,"GET") == 0){
        char *cmd2 = strtok(NULL, " \n");
         char dir[100];
         strcpy(dir,"tmp/server/");
         strcat(dir, cmd2);
 
         openFileAndRead(client, dir);
+    }
+    else if(strcmp(cmd,"PUT") == 0){
+        char *cmd2 = strtok(NULL, " \n");
+       
+       
     }
 }
 /*--------------------------------------------------------------------*/
@@ -113,7 +128,8 @@ void* Child(void* arg)
     int bytes_read;
     int client = *(int *)arg;
 
-   
+    send(client, "welcome to Umar's file server\n", 30, 0);
+    
     
     
 
@@ -141,6 +157,7 @@ void* Child(void* arg)
 /*--- main - setup server and await connections (no need to clean  ---*/
 /*--- up after terminated children.                                ---*/
 /*--------------------------------------------------------------------*/
+
 int main(int argc, char *argv[])
 {  
     //my own
@@ -187,7 +204,7 @@ int main(int argc, char *argv[])
     if ( listen(sd, SOMAXCONN) != 0 )
         PANIC("Listen");
 
-    printf("welcome to Umar's port server\n");
+    printf("File server listening on localhost port 1888\n");
 
     while (1)
     {
