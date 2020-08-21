@@ -25,10 +25,37 @@ void PANIC(char* msg);
 //my own
 int validateuser(char username[], char password[]);
 
+void putFile(int client, char cmd2[], char line[]){
+    char message[150];
+    FILE *fp;
+    struct stat st;
+    char buf[8];
+
+    char dir[100] = "tmp/server/";
+        strcat(dir,cmd2);
+    fp = fopen(dir, "w");
+    fputs(line, fp);
+    fclose(fp);
+    if(stat(dir, &st) == 0)
+            sprintf(buf, "%ld", st.st_size);
+    strcpy(message,"200 ");
+    strcat(message, buf);
+    strcat(message," Byte ");
+    strcat(message,cmd2);
+    strcat(message, " file retrieved by server and was saved.\n");
+    int counter = 0;
+    for(int i=0;message[i]!='\0';i++){
+          counter++;
+      }
+      counter++;
+    send(client, message, counter, 0);
+   
+
+}
+
 void openFileAndRead(int client, char cmd2[]){
      
-    char dir[255] = "tmp/server/";
-        strcat(dir,cmd2);
+    
     
     FILE *selectedfile;
     selectedfile = fopen(cmd2, "r");
@@ -58,14 +85,27 @@ void openFileAndRead(int client, char cmd2[]){
 }
 
 void listFiles(int client){
-  
+    
+    struct stat st;
     DIR *dr;
     struct dirent *files;
     dr = opendir("./tmp/server");
-    char *tempdata;
+    char tempdata[100];
     while((files = readdir(dr)) != NULL ){
-      int counter = 0;
-      tempdata = files->d_name;
+        int counter = 0;
+        char buf[8];
+        strcpy(tempdata,files->d_name);
+        char fileLocation[100] = "tmp/server/";
+        strcat(fileLocation,files->d_name);
+        
+        if(stat(fileLocation, &st) == 0)
+            sprintf(buf, "%ld", st.st_size);
+        strcat(tempdata," ");
+        strcat(tempdata, buf);
+        
+    
+      
+
       for(int i=0;tempdata[i]!='\0';i++){
           counter++;
       }
@@ -79,7 +119,12 @@ void listFiles(int client){
 
 void getCommand(char cmd[], int client){
      // my own
+     char message[150];
      char *cmd1 = strtok(cmd, ". \n");
+    if(strcmp(cmd,"QUIT") == 0){
+        send(client,"Goodbye!\n", 9, 0);
+        exit(0);
+    }
     if(strcmp(cmd1, "USER") == 0){
        char *cmd2 = strtok(NULL, " ");
             if(strcmp(cmd2, "umar") == 0){
@@ -92,8 +137,8 @@ void getCommand(char cmd[], int client){
                 }
             }
         else {
-             send(client, "404 user not found", 13, 0);
-                exit(1);
+             send(client, "404 user not found. Please try with another user\n", 19, 0);
+                return;
         }
     }
     else if(!isLoggedin){
@@ -115,8 +160,33 @@ void getCommand(char cmd[], int client){
     }
     else if(strcmp(cmd,"PUT") == 0){
         char *cmd2 = strtok(NULL, " \n");
-       
-       
+        char line[DEFAULT_BUFLEN];
+        int bytes_read;
+        recv(client, line, sizeof(line), 0);
+        putFile(client, cmd2, line);
+    }
+    else if(strcmp(cmd,"DEL") == 0){
+        char *cmd2 = strtok(NULL, " \n");
+         char dir[100];
+        strcpy(dir,"tmp/server/");
+        strcat(dir, cmd2);
+        int confirm = remove(dir);
+        if(confirm){
+            send(client,"404 FILE is not on the server\n", 30, 0);
+            return;
+        }
+        strcpy(message,"200 File ");
+        strcat(message,cmd2);
+        strcat(message, " deleted\n");
+        int counter = 1;
+        for(int i = 0;message[i]!='\0';i++)
+            counter++;
+        
+        send(client, message, counter, 0);
+    }
+   
+    else {
+        send(client, "Invalid command!\n", 17, 0);
     }
 }
 /*--------------------------------------------------------------------*/
@@ -221,7 +291,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-
+//MY OWN
 int validateuser( char username[], char password[]){
     if(strcmp(password,"password")==0)
         return 1;
