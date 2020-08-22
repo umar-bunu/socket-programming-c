@@ -17,8 +17,9 @@
 /* Definations */
 #define DEFAULT_BUFLEN 1024
 #define PORT 1888
-# define dirname "tmp/server/"
-int isLoggedin = 0;
+int port;
+char dirName[100];
+
 void PANIC(char* msg);
 #define PANIC(msg)  { perror(msg); exit(-1); }
 
@@ -89,13 +90,16 @@ void listFiles(int client){
     struct stat st;
     DIR *dr;
     struct dirent *files;
-    dr = opendir("./tmp/server");
+    dr = opendir(dirName);
     char tempdata[100];
     while((files = readdir(dr)) != NULL ){
         int counter = 0;
         char buf[8];
+        char slash = '/';
         strcpy(tempdata,files->d_name);
-        char fileLocation[100] = "tmp/server/";
+        char fileLocation[100];
+        strcpy(fileLocation,dirName);
+        strncat(fileLocation, &slash, 1);
         strcat(fileLocation,files->d_name);
         
         if(stat(fileLocation, &st) == 0)
@@ -197,7 +201,7 @@ void* Child(void* arg)
 {   char line[DEFAULT_BUFLEN];
     int bytes_read;
     int client = *(int *)arg;
-
+    int isLoggedin = 0;
     send(client, "welcome to Umar's file server\n", 30, 0);
     
     
@@ -231,13 +235,10 @@ void* Child(void* arg)
 int main(int argc, char *argv[])
 {  
     //my own
-    int checkDir;
-    char* dir1 = "tmp";
-    char* dir2 = "tmp/server";
-    mkdir(dir1, 0777);
-    mkdir(dir2, 0777);
-    
-
+   
+  
+  for(int i=0;argv[1][i]!='\0';i++)
+    strncat(dirName, &argv[1][i], 1);
 
      int sd,opt,optval;
     struct sockaddr_in addr;
