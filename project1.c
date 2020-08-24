@@ -128,6 +128,7 @@ void getCommand(char cmd[], int client, int *isLoggedin){
      // my own
      char message[150];
      char *cmd1 = strtok(cmd, ". \n");
+     char *users[10] = {"umar","khalid"};
     if(strcmp(cmd,"QUIT") == 0){
         send(client,"Goodbye!\n", 9, 0);
         exit(0);
@@ -136,13 +137,22 @@ void getCommand(char cmd[], int client, int *isLoggedin){
   
     if(strcmp(cmd1, "USER") == 0){
        char *cmd2 = strtok(NULL, " ");
-            if(strcmp(cmd2, "umar") == 0){
+            if(strcmp(cmd2, users[0]) == 0){
                 
                 char *cmd3 = strtok(NULL, " .\n");
                
                 if(strcmp(cmd3,"password") == 0){      
                     *isLoggedin = 1;
                     send(client, "200 User umar granted to access\n", 32, 0);
+                }
+            }
+            else if(strcmp(cmd2, users[1]) == 0){
+                
+                char *cmd3 = strtok(NULL, " .\n");
+               
+                if(strcmp(cmd3,"password") == 0){      
+                    *isLoggedin = 1;
+                    send(client, "200 User khalid granted to access\n", 34, 0);
                 }
             }
         else {
@@ -209,6 +219,7 @@ void* Child(void* arg)
     int bytes_read;
     int client = *(int *)arg;
     int isLoggedin = 0;
+    
     send(client, "welcome to Umar's file server\n", 30, 0);
     
     
