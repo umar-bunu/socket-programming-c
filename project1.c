@@ -17,7 +17,7 @@
 /* Definations */
 #define DEFAULT_BUFLEN 1024
 #define PORT 1888
-int port;
+int ports;
 char dirName[100];
 
 void PANIC(char* msg);
@@ -121,7 +121,7 @@ void listFiles(int client){
     closedir(dr);
 }
 
-void getCommand(char cmd[], int client){
+void getCommand(char cmd[], int client, int *isLoggedin){
      // my own
      char message[150];
      char *cmd1 = strtok(cmd, ". \n");
@@ -129,6 +129,8 @@ void getCommand(char cmd[], int client){
         send(client,"Goodbye!\n", 9, 0);
         exit(0);
     }
+  
+  
     if(strcmp(cmd1, "USER") == 0){
        char *cmd2 = strtok(NULL, " ");
             if(strcmp(cmd2, "umar") == 0){
@@ -136,7 +138,7 @@ void getCommand(char cmd[], int client){
                 char *cmd3 = strtok(NULL, " .\n");
                
                 if(strcmp(cmd3,"password") == 0){      
-                    isLoggedin = 1;
+                    *isLoggedin = 1;
                     send(client, "200 User umar granted to access\n", 32, 0);
                 }
             }
@@ -145,7 +147,7 @@ void getCommand(char cmd[], int client){
                 return;
         }
     }
-    else if(!isLoggedin){
+    else if(!*isLoggedin){
            send(client, "user not logged in\n",19, 0);
            return;
        }
@@ -213,7 +215,8 @@ void* Child(void* arg)
         bytes_read = recv(client, line, sizeof(line), 0);
         if (bytes_read > 0) {
             char temp;
-            getCommand(line, client);
+            
+            getCommand(line, client, &isLoggedin);
                 
         } else if (bytes_read == 0 ) {
                 printf("Connection closed by client\n");
@@ -239,7 +242,7 @@ int main(int argc, char *argv[])
   
   for(int i=0;argv[1][i]!='\0';i++)
     strncat(dirName, &argv[1][i], 1);
-
+  ports = atoi(argv[2]);
      int sd,opt,optval;
     struct sockaddr_in addr;
     unsigned short port=0;
@@ -261,7 +264,7 @@ int main(int argc, char *argv[])
     if ( port > 0 )
                 addr.sin_port = htons(port);
     else
-                addr.sin_port = htons(PORT);
+                addr.sin_port = htons(ports);
 
     addr.sin_addr.s_addr = INADDR_ANY;
 
@@ -275,7 +278,7 @@ int main(int argc, char *argv[])
     if ( listen(sd, SOMAXCONN) != 0 )
         PANIC("Listen");
 
-    printf("File server listening on localhost port 1888\n");
+    printf("File server listening on localhost port %d\n", ports);
 
     while (1)
     {
