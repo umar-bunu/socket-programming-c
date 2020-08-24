@@ -32,8 +32,11 @@ void putFile(int client, char cmd2[], char line[]){
     struct stat st;
     char buf[8];
 
-    char dir[100] = "tmp/server/";
-        strcat(dir,cmd2);
+     char slash = '/';
+         char dir[100];
+        strcpy(dir,dirName);
+          strncat(dir, &slash, 1);
+        strcat(dir, cmd2);
     fp = fopen(dir, "w");
     fputs(line, fp);
     fclose(fp);
@@ -159,7 +162,7 @@ void getCommand(char cmd[], int client, int *isLoggedin){
     else if(strcmp(cmd1,"GET") == 0){
        char *cmd2 = strtok(NULL, " \n");
         char dir[100];
-        strcpy(dir,"tmp/server/");
+        strcpy(dir,dirName);
         strcat(dir, cmd2);
 
         openFileAndRead(client, dir);
@@ -173,8 +176,10 @@ void getCommand(char cmd[], int client, int *isLoggedin){
     }
     else if(strcmp(cmd,"DEL") == 0){
         char *cmd2 = strtok(NULL, " \n");
+        char slash = '/';
          char dir[100];
-        strcpy(dir,"tmp/server/");
+        strcpy(dir,dirName);
+          strncat(dir, &slash, 1);
         strcat(dir, cmd2);
         int confirm = remove(dir);
         if(confirm){
@@ -240,10 +245,10 @@ int main(int argc, char *argv[])
     //my own
    
   
-  for(int i=0;argv[1][i]!='\0';i++)
-    strncat(dirName, &argv[1][i], 1);
-  ports = atoi(argv[2]);
-     int sd,opt,optval;
+    for(int i=0;argv[1][i]!='\0';i++)
+        strncat(dirName, &argv[1][i], 1);
+    ports = atoi(argv[2]);
+    int sd,opt,optval;
     struct sockaddr_in addr;
     unsigned short port=0;
 
