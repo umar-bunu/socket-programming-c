@@ -124,14 +124,17 @@ void listFiles(int client){
     closedir(dr);
 }
 
-void getCommand(char cmd[], int client, int *isLoggedin){
+void getCommand(char cmd[], int client, int *isLoggedin, int *bytes_read){
      // my own
      char message[150];
      char *cmd1 = strtok(cmd, ". \n");
      char *users[10] = {"umar","khalid"};
     if(strcmp(cmd,"QUIT") == 0){
         send(client,"Goodbye!\n", 9, 0);
-        exit(0);
+        close(client);
+        *bytes_read = 0;
+        
+        return;
     }
   
   
@@ -231,13 +234,16 @@ void* Child(void* arg)
         bytes_read = recv(client, line, sizeof(line), 0);
         if (bytes_read > 0) {
             char temp;
-            
-            getCommand(line, client, &isLoggedin);
+        if(strcmp(line,"QUIT") == 0){
+            send(client, "Goodbe!", 9, 0);
+           
+        }   
+            getCommand(line, client, &isLoggedin, &bytes_read);
                 
-        } else if (bytes_read == 0 ) {
+        } if (bytes_read == 0 ) {
                 printf("Connection closed by client\n");
                 break;
-        } else {
+        } else if(bytes_read < 0){
                 printf("Connection has problem\n");
                 break;
         }
@@ -256,8 +262,8 @@ int main(int argc, char *argv[])
     //my own
    
   
-    for(int i=0;argv[1][i]!='\0';i++)
-        strncat(dirName, &argv[1][i], 1);
+   for(int i=0;argv[1][i]!='\0';i++)
+        strncat(dirName, &argv[1][i], 1); 
     ports = atoi(argv[2]);
     int sd,opt,optval;
     struct sockaddr_in addr;
